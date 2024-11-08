@@ -695,13 +695,80 @@ For a weighted graph, calculate for each pair of nodes the **minimum** length of
 Construct a matrix L where L[i][i] is the degree of node i, L[i][j] = −1 if there is an edge between nodes i and j, otherwise L[i][j] = 0. Then its determinant is the number of spanning trees.
 
 # Strings
+
+## Hash calculation
+![image](https://github.com/user-attachments/assets/7967c6ea-a2ee-4563-b385-1e02a8732592)
+```C++
+long long compute_hash(string const& s) {
+    const int p = 31;
+    const int m = 1e9 + 9;
+    long long hash_value = 0;
+    long long p_pow = 1;
+    for (char c : s) {
+        hash_value = (hash_value + (c - 'a' + 1) * p_pow) % m;
+        p_pow = (p_pow * p) % m;
+    }
+    return hash_value;
+}
+```
+
+## Fast hash calculation of a substring
+![image](https://github.com/user-attachments/assets/ee86c4da-ed52-45ae-a7a4-f25a9798848b)
+
+## String matching
+Find all patterns of $s$ in $t$ in $O(|t| + |s|)$.
+```C++
+vector<int> rabin_karp(string const& s, string const& t) {
+    const int p = 31; 
+    const int m = 1e9 + 9;
+    int S = s.size(), T = t.size();
+
+    vector<long long> p_pow(max(S, T)); 
+    p_pow[0] = 1; 
+    for (int i = 1; i < (int)p_pow.size(); i++) 
+        p_pow[i] = (p_pow[i-1] * p) % m;
+
+    vector<long long> h(T + 1, 0); 
+    for (int i = 0; i < T; i++)
+        h[i+1] = (h[i] + (t[i] - 'a' + 1) * p_pow[i]) % m; 
+    long long h_s = 0; 
+    for (int i = 0; i < S; i++) 
+        h_s = (h_s + (s[i] - 'a' + 1) * p_pow[i]) % m; 
+
+    vector<int> occurrences;
+    for (int i = 0; i + S - 1 < T; i++) {
+        long long cur_h = (h[i+S] + m - h[i]) % m;
+        if (cur_h == h_s * p_pow[i] % m)
+            occurrences.push_back(i);
+    }
+    return occurrences;
+}
+```
+
+
+There is a really easy trick to reduce collisions. We can just compute two different hashes for each string (by using two different $p$ , and/or different $m$ , and compare these pairs instead.
+
 ## Prefix function
 https://cp-algorithms.com/string/prefix-function.html#efficient-algorithm
 For the 2nd case of the 2nd optimization, we can move by setting `j = pi[j - 1]` because in the answer for `pi[j-1]`, its suffix will also be a suffix of `pi[j]`. 
 
 If this is still not clear: f we want the next longest suffix of length j < pi[i], then `s[0..j]  = s[i - pi[i] + 1... i - pi[i] + j]`, but since by definition of `pi[i]`, we also have `s[0...k] == s[i - pi[i] + 1...i - pi[i] + k]` for k < j < pi[i]. So if `s[0...j]` to appears another time (in `s[i - pi[i] + 1... i]`) after the initial occurence at `i - pi[i] + 1`, then it would also have appeared earlier in `s[0...pi[i] - 1]`. That's why we can take steps of `j = pi[j - 1]`.
 
-
+```C++
+vector<int> prefix_function(string s) {
+    int n = (int)s.length();
+    vector<int> pi(n);
+    for (int i = 1; i < n; i++) {
+        int j = pi[i-1];
+        while (j > 0 && s[i] != s[j])
+            j = pi[j-1];
+        if (s[i] == s[j])
+            j++;
+        pi[i] = j;
+    }
+    return pi;
+}
+```
 
 # Team strategy
 Standard variable names:
